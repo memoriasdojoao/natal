@@ -27,8 +27,15 @@ button{font:600 16px system-ui,sans-serif;min-height:44px;padding:0 14px;border-
 .row{border-top:1px solid var(--line);padding:12px 0}
 .lk{font-size:13px;color:var(--mut)}
 .bt{display:flex;gap:8px}.bt button{flex:1;padding:0 6px}
-.box{font-size:120px;line-height:1;border:0;background:none;min-height:140px;animation:wig 2s ease-in-out infinite}
-.box.shake{animation:shk .9s}
+.gift{width:170px;height:170px;display:block;margin:6px auto 14px;overflow:visible;animation:wig 2.4s ease-in-out infinite}
+.gift.shake{animation:shk .45s infinite}
+.lid{transition:transform .6s cubic-bezier(.2,.9,.3,1.3),opacity .6s;transform-box:fill-box;transform-origin:center}
+.gift.open{animation:none}.gift.open .lid{transform:translate(34px,-46px) rotate(26deg);opacity:0}
+.go{width:100%;min-height:58px;font-size:20px;border:0;color:#2b1a00;background:linear-gradient(180deg,#f3cd78,#d79a2a);box-shadow:0 6px 0 #9a6a14,0 10px 24px rgba(0,0,0,.35)}
+.go:active{transform:translateY(4px);box-shadow:0 2px 0 #9a6a14}
+.dots{font:700 24px Georgia,serif;color:var(--gold);margin:8px 0;animation:blink .5s infinite alternate}
+.cf{position:fixed;top:-14px;width:9px;height:14px;pointer-events:none;z-index:5;animation:fall linear forwards}
+@keyframes blink{to{opacity:.25}}
 .nm{font-size:36px;font-weight:700;color:var(--gold);margin:6px 0 12px;word-break:break-word}
 #res:not([hidden]){animation:pop .7s}
 .sn{position:fixed;top:-2em;color:#fff;opacity:.7;pointer-events:none;animation:fall linear infinite}
@@ -36,7 +43,7 @@ button{font:600 16px system-ui,sans-serif;min-height:44px;padding:0 14px;border-
 @keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg) scale(1.05)}}
 @keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-14px) rotate(-8deg)}40%{transform:translateX(14px) rotate(8deg)}60%{transform:translateX(-10px)}80%{transform:translateX(10px)}}
 @keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){.sn{display:none}.box{animation:none}}
+@media (prefers-reduced-motion:reduce){.sn,.cf{display:none}.gift{animation:none}}
 </style>
 </head>
 <body>
@@ -54,12 +61,38 @@ const base=()=>location.href.split('#')[0].split('?')[0];
 const HDR='<h1>🎄 Amigo Secreto</h1><p class="fam">Ratochinski, von Linsingen e Grah</p>';
 const view=h=>{app.innerHTML=HDR+h};
 
+function suspense(){
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  try{navigator.audioSession.type='playback'}catch(e){}
+  const c=new AC();if(c.resume)c.resume();
+  const T=c.currentTime,D=5.4,g=c.createGain();g.gain.value=.5;g.connect(c.destination);
+  const tone=(type,f,t,len,v,f2)=>{const o=c.createOscillator(),e=c.createGain();o.type=type;o.frequency.setValueAtTime(f,T+t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,T+t+len);e.gain.setValueAtTime(.0001,T+t);e.gain.exponentialRampToValueAtTime(v,T+t+.01);e.gain.exponentialRampToValueAtTime(.0001,T+t+len);o.connect(e);e.connect(g);o.start(T+t);o.stop(T+t+len+.05)};
+  const o=c.createOscillator(),e=c.createGain(),f=c.createBiquadFilter();
+  o.type='sawtooth';o.frequency.setValueAtTime(55,T);o.frequency.exponentialRampToValueAtTime(110,T+D);
+  f.type='lowpass';f.frequency.setValueAtTime(200,T);f.frequency.linearRampToValueAtTime(900,T+D);
+  e.gain.setValueAtTime(.0001,T);e.gain.linearRampToValueAtTime(.35,T+D);e.gain.linearRampToValueAtTime(.0001,T+D+.15);
+  o.connect(f);f.connect(e);e.connect(g);o.start(T);o.stop(T+D+.2);
+  const N=[196,196,233.08,196,261.63,196,233.08,196];let t=0,i=0;
+  while(t<D){const p=t/D;tone('triangle',N[i%8]*(1+p*.5),t,.09,.5);t+=.34-.26*p;i++}
+  tone('sine',65,D,.7,.9,38);
+  [523.25,659.25,783.99,1046.5].forEach((q,k)=>tone('triangle',q,D+.05+k*.09,1.2,.35));
+  setTimeout(()=>c.close&&c.close(),9500);
+}
+function confetti(){
+  const col=['#c8283a','#e3b04b','#2ea36f','#ffffff','#6ec6ff'];
+  for(let i=0;i<48;i++){const s=document.createElement('i');s.className='cf';s.style.cssText=`left:${rnd(100)}%;background:${col[rnd(5)]};animation-duration:${2+rnd(30)/10}s;animation-delay:${rnd(8)/10}s`;document.body.appendChild(s);setTimeout(()=>s.remove(),6500)}
+}
 function guest(p){
   let r;
   try{r=unpack(p);if(typeof r.n!=='string'||typeof r.t!=='string')throw 0}
   catch(e){return view('<div class="card g"><h2>Link incompleto</h2><p class="mut">Peça para quem organizou reenviar o seu link. Ele precisa ser copiado inteiro.</p></div>')}
-  view(`<div class="card g"><p class="mut">Ho ho ho!</p><h2>Olá, ${esc(r.n)}!</h2><button class="box" id="box" aria-label="Abrir presente">🎁</button><p id="hint" class="mut">Toque no presente para descobrir quem você tirou</p><div id="res" hidden><p class="mut">Você tirou</p><div class="nm">${esc(r.t)}</div><p>Shhh, é segredo! 🤫</p><p class="mut small">Pode abrir este link em qualquer aparelho: o resultado é sempre o mesmo.</p></div></div>`);
-  $('#box').onclick=e=>{const b=e.currentTarget;b.classList.add('shake');setTimeout(()=>{b.style.display='none';$('#hint').hidden=true;$('#res').hidden=false},900)};
+  view(`<div class="card g"><p class="mut">Ho ho ho!</p><h2>Olá, ${esc(r.n)}!</h2><svg id="gift" class="gift" viewBox="0 0 120 120" aria-hidden="true"><rect x="18" y="52" width="84" height="56" rx="6" fill="#c8283a"/><rect x="52" y="52" width="16" height="56" fill="#e3b04b"/><g class="lid"><rect x="12" y="38" width="96" height="20" rx="6" fill="#d8394b"/><rect x="52" y="38" width="16" height="20" fill="#e3b04b"/><path d="M60 38C40 14 20 22 34 36 42 42 56 40 60 38Z" fill="#e3b04b"/><path d="M60 38C80 14 100 22 86 36 78 42 64 40 60 38Z" fill="#e3b04b"/></g></svg><div id="act"><button class="go" id="go">Quem eu tirei?</button><p class="mut small">🔊 Ligue o som para a surpresa completa</p></div><div id="res" hidden><p class="mut">Você tirou</p><div class="nm">${esc(r.t)}</div><p>Shhh, é segredo! 🤫</p><p class="mut small">Este link abre igual em qualquer aparelho: o resultado é sempre o mesmo.</p></div></div>`);
+  $('#go').onclick=()=>{
+    $('#act').innerHTML='<p class="dots">Quem será…</p>';
+    $('#gift').classList.add('shake');
+    suspense();
+    setTimeout(()=>{const g=$('#gift');g.classList.remove('shake');g.classList.add('open');$('#act').hidden=true;$('#res').hidden=false;confetti()},5400);
+  };
 }
 
 function form(names=''){
